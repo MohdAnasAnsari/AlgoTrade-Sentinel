@@ -1,0 +1,129 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_NAME: ${APP_NAME:-AlgoTrade Sentinel}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      ENVIRONMENT: ${ENVIRONMENT:-staging}
+      DEBUG: ${DEBUG:-false}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://algotrade:algotrade@db:5432/algotrade}
+      DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
+      DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-20}
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-120/minute}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENABLE_REQUEST_LOGGING: ${ENABLE_REQUEST_LOGGING:-true}
+      ENABLE_APSCHEDULER: ${ENABLE_APSCHEDULER:-true}
+      INGEST_CRON: ${INGEST_CRON:-15 22 * * 1-5}
+      FEATURE_CRON: ${FEATURE_CRON:-30 22 * * 1-5}
+      INFERENCE_CRON: ${INFERENCE_CRON:-45 22 * * 1-5}
+      MONITORING_CRON: ${MONITORING_CRON:-0 23 * * 1-5}
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      MLFLOW_STATUS_TIMEOUT_SECONDS: ${MLFLOW_STATUS_TIMEOUT_SECONDS:-3}
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+    command: ["/bin/sh", "-c", "/app/scripts/init_db.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ml_artifacts:/app/ml/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-algotrade}
+      POSTGRES_USER: ${POSTGRES_USER:-algotrade}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-algotrade}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-algotrade} -d ${POSTGRES_DB:-algotrade}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    command:
+      [
+        "mlflow",
+        "server",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5000",
+        "--backend-store-uri",
+        "sqlite:////mlflow/mlflow.db",
+        "--default-artifact-root",
+        "/mlflow/artifacts",
+        "--serve-artifacts",
+      ]
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_artifacts:/mlflow
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000').status < 500 else 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  prefect:
+    image: prefecthq/prefect:2.19.9-python3.11
+    command: ["prefect", "server", "start", "--host", "0.0.0.0"]
+    environment:
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+    ports:
+      - "4200:4200"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:4200/api/health').status == 200 else 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  mlflow_artifacts:
+  ml_artifacts:

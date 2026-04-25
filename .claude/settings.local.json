@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -m alembic upgrade head)",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import pyarrow; import numpy; print\\('pyarrow', pyarrow.__version__, '| numpy', numpy.__version__\\)\")",
+      "Bash(npm run *)",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8010)",
+      "Bash(curl -s http://localhost:8010/health)",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c ' *)",
+      "Bash(curl -s -X POST http://localhost:8010/api/features/run -H 'Content-Type: application/json' -d '{\"tickers\": [\"AAPL\"], \"build_dataset\": true}')",
+      "Bash(curl -s \"http://localhost:8010/api/features/list/AAPL?limit=3\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('count:', d['count']\\); print\\('sample row keys:', list\\(d['rows'][0].keys\\(\\)\\)[:8]\\)\")",
+      "Bash(curl -s \"http://localhost:8010/api/features/stats/AAPL\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('total_rows:', d['total_rows']\\); print\\('rsi_14:', d['stats']['rsi_14']\\)\")",
+      "Bash(curl -s \"http://localhost:8010/api/labels/distribution\")",
+      "Bash(curl -s \"http://localhost:8010/api/dataset/versions\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Bash(curl -s \"http://localhost:8010/api/dataset/1/summary\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('n_rows:', d['n_rows'], '| n_train:', d['n_train'], '| n_test:', d['n_test'], '| split:', d['split_date']\\)\")",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -m pip install scikit-learn xgboost lightgbm mlflow optuna matplotlib --quiet)",
+      "Bash(/c/Users/ADMIN/AppData/Local/Programs/Python/Python312/python.exe -c \"import sklearn, xgboost, lightgbm, mlflow, optuna, matplotlib; print\\('sklearn:', sklearn.__version__\\); print\\('xgboost:', xgboost.__version__\\); print\\('lightgbm:', lightgbm.__version__\\); print\\('mlflow:', mlflow.__version__\\); print\\('optuna:', optuna.__version__\\); print\\('matplotlib:', matplotlib.__version__\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(grep -r \"zustand\\\\|date-fns\\\\|Intl.NumberFormat\" /c/Users/ADMIN/Desktop/algoTradeSentinal/AlgotradeSentinel/AlgoTrade-Sentinel/frontend --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\")",
+      "Bash(grep -r \"SECRET_KEY\\\\|password\\\\|api.key\\\\|api_key\" /c/Users/ADMIN/Desktop/algoTradeSentinal/AlgotradeSentinel/AlgoTrade-Sentinel/backend --include=\"*.py\" ! -path \"*/alembic/*\")"
+    ]
+  }
+}

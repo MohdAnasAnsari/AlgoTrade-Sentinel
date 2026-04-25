@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: algotrade-sentinel-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MLFLOW_TRACKING_URI
+        sync: false
+      - key: PREFECT_API_URL
+        sync: false
+      - key: ENABLE_APSCHEDULER
+        value: "true"
