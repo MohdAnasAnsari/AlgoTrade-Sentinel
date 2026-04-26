@@ -5,6 +5,32 @@
 AlgoTrade Sentinel is a production-grade system that automates the entire quantitative trading research lifecycle — from raw market data ingestion through feature engineering, multi-model machine learning, backtesting, live signal generation, model monitoring, and paper portfolio simulation — all accessible through a modern React dashboard.
 
 ---
+<img width="1919" height="946" alt="Screenshot 2026-04-26 193923" src="https://github.com/user-attachments/assets/fa9720a1-6419-4ac9-9f89-8e2528e63c21" />
+<img width="1919" height="937" alt="Screenshot 2026-04-26 193954" src="https://github.com/user-attachments/assets/7a607ef8-7a08-49df-8a47-1e25cc0497ae" />
+<img width="1912" height="945" alt="Screenshot 2026-04-26 194003" src="https://github.com/user-attachments/assets/19d9f9ce-135b-4780-bded-646781979201" />
+<img width="1919" height="941" alt="Screenshot 2026-04-26 194850" src="https://github.com/user-attachments/assets/294fba6e-6b9d-46cf-b3cd-306f5d7f7cef" />
+<img width="1883" height="889" alt="Screenshot 2026-04-26 194840" src="https://github.com/user-attachments/assets/41a750bc-d7f5-434d-89c8-eb7ea71837be" />
+<img width="1918" height="955" alt="Screenshot 2026-04-26 194821" src="https://github.com/user-attachments/assets/d0c42e51-65e3-433e-b464-2a104d5b32fd" />
+<img width="1916" height="888" alt="Screenshot 2026-04-26 194811" src="https://github.com/user-attachments/assets/aa7246a0-dad6-4149-9161-156a298454f7" />
+<img width="1916" height="939" alt="Screenshot 2026-04-26 194759" src="https://github.com/user-attachments/assets/94a23af6-7865-4575-8250-909a6b987c4b" />
+<img width="1908" height="934" alt="Screenshot 2026-04-26 194745" src="https://github.com/user-attachments/assets/78ac5fb0-c643-4045-a117-c68b257b9ddd" />
+<img width="1899" height="910" alt="Screenshot 2026-04-26 194700" src="https://github.com/user-attachments/assets/a6267d64-7253-4eb7-9dbf-c37379a2b4b3" />
+<img width="1918" height="868" alt="Screenshot 2026-04-26 194643" src="https://github.com/user-attachments/assets/4ca70809-dafb-4740-a10a-8f7c3bba4a51" />
+<img width="1916" height="894" alt="Screenshot 2026-04-26 194633" src="https://github.com/user-attachments/assets/1fd7e70c-9953-484f-83ee-44b2a6164f8a" />
+<img width="1919" height="763" alt="Screenshot 2026-04-26 194622" src="https://github.com/user-attachments/assets/a0bfd008-fb53-4bdd-8156-3ec80691e1cd" />
+<img width="1919" height="853" alt="Screenshot 2026-04-26 194557" src="https://github.com/user-attachments/assets/f8d7c92e-5c58-4fa6-912d-bf39e959049f" />
+<img width="1789" height="936" alt="Screenshot 2026-04-26 194538" src="https://github.com/user-attachments/assets/7ce2df59-aafa-4343-9518-fb378f13438c" />
+<img width="1839" height="788" alt="Screenshot 2026-04-26 194450" src="https://github.com/user-attachments/assets/5b733dc0-69f0-4f1c-9c0d-259424dac151" />
+<img width="1919" height="937" alt="Screenshot 2026-04-26 194243" src="https://github.com/user-attachments/assets/db8913d4-deea-4643-9840-3544bcaa037f" />
+<img width="1917" height="966" alt="Screenshot 2026-04-26 194219" src="https://github.com/user-attachments/assets/1d587499-8a36-44c4-8908-24651a3dfc9e" />
+<img width="1919" height="934" alt="Screenshot 2026-04-26 194204" src="https://github.com/user-attachments/assets/dc7468c5-1d0d-4086-99b9-d5e324c8a8c7" />
+<img width="1919" height="965" alt="Screenshot 2026-04-26 194140" src="https://github.com/user-attachments/assets/5683ffe4-e497-4c0b-8837-76cac26d195d" />
+<img width="1919" height="943" alt="Screenshot 2026-04-26 194128" src="https://github.com/user-attachments/assets/c5dab503-1419-4217-bbf4-a75ab8c51734" />
+<img width="1919" height="945" alt="Screenshot 2026-04-26 194040" src="https://github.com/user-attachments/assets/b3191a0d-965c-497c-be37-11efec954a8d" />
+<img width="1916" height="872" alt="Screenshot 2026-04-26 194023" src="https://github.com/user-attachments/assets/f5706407-f84a-4993-9c7b-94448040eafa" />
+<img width="1912" height="945" alt="Screenshot 2026-04-26 194003" src="https://github.com/user-attachments/assets/19d9f9ce-135b-4780-bded-646781979201" />
+
+
 
 ## Table of Contents
 
