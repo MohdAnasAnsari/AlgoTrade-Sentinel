@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import logging
 import sys
+import threading
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,8 @@ for _path in (_BACKEND_DIR, _REPO_ROOT):
         sys.path.insert(0, _path)
 
 from app.models.monitoring import MonitoringReport, RetrainLog
+
+_MONITORING_REPORT_LOCK = threading.Lock()
 
 
 def get_latest_summary(db: Session) -> dict[str, Any]:
@@ -140,9 +144,23 @@ def _ensure_latest_report() -> dict[str, Any]:
     )
 
     report = get_latest_saved_report()
-    if report_is_stale(report):
-        logger.info("Refreshing monitoring report on demand")
-        report = generate_and_save_monitoring_report(report_type="api")
+    if not report_is_stale(report):
+        return report
+
+    with _MONITORING_REPORT_LOCK:
+        report = get_latest_saved_report()
+        if not report_is_stale(report):
+            return report
+
+        try:
+            logger.info("Refreshing monitoring report on demand")
+            return generate_and_save_monitoring_report(report_type="api")
+        except Exception as exc:
+            logger.warning("Monitoring report refresh failed; serving fallback data: %s", exc, exc_info=True)
+            if report is not None:
+                return report
+            return _empty_report(report_type="api")
+
     return report
 
 
@@ -153,3 +171,24 @@ def _system_status(alert_level: str) -> str:
         "CRITICAL": "CRITICAL",
     }
     return mapping.get(alert_level, "HEALTHY")
+
+
+def _empty_report(report_type: str) -> dict[str, Any]:
+    return {
+        "id": None,
+        "report_date": date.today(),
+        "report_type": report_type,
+        "drift_share": 0.0,
+        "prediction_drift_detected": False,
+        "model_perf_f1": None,
+        "alert_level": "INFO",
+        "evidently_report_html": None,
+        "details": {
+            "data_drift": {
+                "feature_count": 0,
+                "drifted_count": 0,
+            },
+            "alerts": [],
+        },
+        "created_at": None,
+    }

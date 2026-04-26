@@ -11,22 +11,29 @@ from app.models.portfolio import Watchlist
 from ml.data_pipeline.watchlist import load_watchlist
 
 logger = logging.getLogger(__name__)
+_WATCHLIST_SEED_LOCK = threading.Lock()
 
 
 def ensure_watchlist_seeded(db: Session) -> None:
-    if db.query(Watchlist).count() > 0:
+    if _watchlist_has_rows(db):
         return
-    defaults = load_watchlist()
-    for item in defaults:
-        db.add(
-            Watchlist(
-                ticker=item["ticker"].upper(),
-                company_name=item.get("name") or item["ticker"].upper(),
-                sector=item.get("sector"),
-                is_active=True,
+
+    with _WATCHLIST_SEED_LOCK:
+        db.expire_all()
+        if _watchlist_has_rows(db):
+            return
+
+        defaults = load_watchlist()
+        for item in defaults:
+            db.add(
+                Watchlist(
+                    ticker=item["ticker"].upper(),
+                    company_name=item.get("name") or item["ticker"].upper(),
+                    sector=item.get("sector"),
+                    is_active=True,
+                )
             )
-        )
-    db.commit()
+        db.commit()
 
 
 def list_watchlist(db: Session) -> list[Watchlist]:
@@ -118,3 +125,7 @@ def _run_watchlist_pipeline(ticker: str) -> None:
             logger.info("Watchlist inference skipped for %s: %s", ticker, exc)
     finally:
         db.close()
+
+
+def _watchlist_has_rows(db: Session) -> bool:
+    return db.query(Watchlist.id).limit(1).first() is not None

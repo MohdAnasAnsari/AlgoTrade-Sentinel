@@ -2,14 +2,21 @@
   "version": 1,
   "tickers": [
     "AAPL",
+    "AMZN",
+    "GLD",
     "GOOGL",
-    "MSFT"
+    "META",
+    "MSFT",
+    "NVDA",
+    "QQQ",
+    "SPY",
+    "TSLA"
   ],
   "date_range_start": "2022-02-07",
   "date_range_end": "2026-04-17",
-  "n_rows": 3156,
-  "n_train": 681,
-  "n_test": 2475,
+  "n_rows": 10520,
+  "n_train": 2270,
+  "n_test": 8250,
   "feature_list": [
     "sma_10",
     "sma_20",
@@ -48,11 +55,11 @@
     "candle_body_pct"
   ],
   "label_distribution": {
-    "BUY": 1041,
-    "SELL": 833,
-    "HOLD": 1282
+    "BUY": 3436,
+    "SELL": 2725,
+    "HOLD": 4359
   },
   "split_date": "2023-01-01",
   "file_path": "/app/ml/artifacts/datasets/dataset_v1.parquet",
-  "created_at": "2026-04-25T20:25:39.668925"
+  "created_at": "2026-04-26T11:29:53.632385"
 }

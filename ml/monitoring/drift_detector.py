@@ -180,6 +180,7 @@ def save_monitoring_report(report: dict[str, Any]) -> int:
                     :alert_level,
                     :evidently_report_html
                 )
+                RETURNING id
                 """
             ),
             {
@@ -187,14 +188,14 @@ def save_monitoring_report(report: dict[str, Any]) -> int:
                 "report_type": report["report_type"],
                 "drift_share": report["drift_share"],
                 "drifted_features_json": payload,
-                "prediction_drift_detected": int(report["prediction_drift_detected"]),
+                "prediction_drift_detected": bool(report["prediction_drift_detected"]),
                 "model_perf_f1": report["model_perf_f1"],
                 "alert_level": report["alert_level"],
                 "evidently_report_html": report["evidently_report_html"],
             },
         )
         session.commit()
-        return int(result.lastrowid)
+        return int(result.scalar_one())
 
 
 def get_latest_saved_report() -> dict[str, Any] | None:

@@ -37,6 +37,10 @@ _UPDATED_AT_TABLES = (
     "alerts",
 )
 
+_CREATED_AT_TABLE_SOURCES = {
+    "watchlists": "added_at",
+}
+
 _LEGACY_TABLE_COPIES = {
     "watchlists": """
         INSERT INTO watchlists (
@@ -133,6 +137,19 @@ def _repair_legacy_schema() -> None:
         inspector = inspect(conn)
         existing_tables = set(inspector.get_table_names())
 
+        for table_name, source_column in _CREATED_AT_TABLE_SOURCES.items():
+            if table_name not in existing_tables:
+                continue
+            columns = {column["name"] for column in inspector.get_columns(table_name)}
+            if "created_at" in columns:
+                continue
+            logger.info("Adding missing created_at column to %s", table_name)
+            _add_created_at_column(
+                conn,
+                table_name,
+                source_column=source_column if source_column in columns else None,
+            )
+
         for table_name in _UPDATED_AT_TABLES:
             if table_name not in existing_tables:
                 continue
@@ -171,6 +188,38 @@ def _add_updated_at_column(conn, table_name: str) -> None:
             "SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)"
         )
     )
+
+
+def _add_created_at_column(conn, table_name: str, *, source_column: str | None = None) -> None:
+    dialect_name = conn.dialect.name
+    column_type = "DATETIME" if dialect_name == "sqlite" else "TIMESTAMP"
+
+    if dialect_name == "sqlite":
+        conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN created_at {column_type}"))
+        conn.execute(
+            text(
+                f"UPDATE {table_name} "
+                f"SET created_at = COALESCE({_timestamp_fallback_sql(source_column)})"
+            )
+        )
+        return
+
+    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN created_at {column_type}"))
+    conn.execute(
+        text(
+            f"UPDATE {table_name} "
+            f"SET created_at = COALESCE({_timestamp_fallback_sql(source_column)}) "
+            "WHERE created_at IS NULL"
+        )
+    )
+    conn.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP"))
+    conn.execute(text(f"ALTER TABLE {table_name} ALTER COLUMN created_at SET NOT NULL"))
+
+
+def _timestamp_fallback_sql(source_column: str | None) -> str:
+    parts = [source_column] if source_column else []
+    parts.append("CURRENT_TIMESTAMP")
+    return ", ".join(parts)
 
 
 def _legacy_name(target_table: str) -> str:

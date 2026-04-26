@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+import threading
 from typing import Any
 
 from sqlalchemy import func
@@ -14,16 +15,19 @@ from app.services.settings_service import get_portfolio_config
 from app.services.watchlist_service import ensure_watchlist_seeded, get_watchlist_map
 from ml.portfolio.paper_trader import PortfolioConfig, simulate_paper_portfolio
 
+_PORTFOLIO_STATE_LOCK = threading.Lock()
+
 
 def ensure_portfolio_state(db: Session) -> None:
     ensure_watchlist_seeded(db)
-    latest_market_date = db.query(func.max(MarketData.date)).scalar()
-    latest_snapshot_date = db.query(func.max(PortfolioSnapshot.snapshot_date)).scalar()
-    if latest_market_date is None:
+    if not _portfolio_state_needs_rebuild(db):
         return
-    if latest_snapshot_date == latest_market_date and db.query(PortfolioSnapshot).count() > 0:
-        return
-    rebuild_portfolio_state(db)
+
+    with _PORTFOLIO_STATE_LOCK:
+        db.expire_all()
+        if not _portfolio_state_needs_rebuild(db):
+            return
+        rebuild_portfolio_state(db)
 
 
 def rebuild_portfolio_state(db: Session) -> None:
@@ -43,10 +47,9 @@ def rebuild_portfolio_state(db: Session) -> None:
         ),
     )
 
-    db.query(Order).delete()
-    db.query(Position).delete()
-    db.query(PortfolioSnapshot).delete()
-    db.commit()
+    db.query(Order).delete(synchronize_session=False)
+    db.query(Position).delete(synchronize_session=False)
+    db.query(PortfolioSnapshot).delete(synchronize_session=False)
 
     for row in simulated["positions"]:
         db.add(
@@ -318,3 +321,15 @@ def _highlight(positions: list[Position], *, best: bool) -> dict[str, Any] | Non
         "unrealized_pnl": float(chosen.unrealized_pnl),
         "unrealized_pnl_pct": float(chosen.unrealized_pnl_pct),
     }
+
+
+def _portfolio_state_needs_rebuild(db: Session) -> bool:
+    latest_market_date = db.query(func.max(MarketData.date)).scalar()
+    if latest_market_date is None:
+        return False
+
+    latest_snapshot_date = db.query(func.max(PortfolioSnapshot.snapshot_date)).scalar()
+    if latest_snapshot_date != latest_market_date:
+        return True
+
+    return db.query(PortfolioSnapshot.id).limit(1).first() is None

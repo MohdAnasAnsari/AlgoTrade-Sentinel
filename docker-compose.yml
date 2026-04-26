@@ -107,8 +107,14 @@ services:
     environment:
       PREFECT_SERVER_API_HOST: 0.0.0.0
       PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://algotrade:algotrade@db:5432/algotrade
+      PREFECT_SERVER_TELEMETRY_ENABLED: "false"
+      PREFECT_HOME: /tmp/.prefect
     ports:
       - "4200:4200"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:4200/api/health').status == 200 else 1)"]
