@@ -57,7 +57,7 @@ const navigation: NavSection[] = [
   {
     section: "Trading",
     items: [
-      { label: "Backtesting Center", href: "/backtesting", icon: BarChart2 },
+      { label: "Backtesting Center", href: "/backtesting-center", icon: BarChart2 },
       { label: "Signal Center", href: "/signal-center", icon: Zap },
       { label: "Paper Portfolio", href: "/paper-portfolio", icon: Briefcase },
     ],

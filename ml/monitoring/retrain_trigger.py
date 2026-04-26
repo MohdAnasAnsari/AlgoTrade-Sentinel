@@ -223,7 +223,7 @@ def _write_retrain_log(
         result = session.execute(
             text(
                 """
-                INSERT INTO retrain_log (
+                INSERT INTO retrain_logs (
                     triggered_at,
                     trigger_reason,
                     old_model_version,

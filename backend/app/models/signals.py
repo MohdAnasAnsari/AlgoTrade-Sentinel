@@ -41,6 +41,6 @@ class ModelRegistryLog(TimestampMixin, Base):
     mlflow_run_id = Column(String(100),nullable=True)
 
     __table_args__ = (
-        Index("ix_registry_model_version", "model_name", "version"),
-        Index("ix_registry_stage",         "stage"),
+        Index("ix_model_registry_logs_model_version", "model_name", "version"),
+        Index("ix_model_registry_logs_stage", "stage"),
     )

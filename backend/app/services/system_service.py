@@ -3,9 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import psutil
 from sqlalchemy import func
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _ARTIFACT_ROOT = _REPO_ROOT / "ml" / "artifacts"
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 def get_system_status(db: Session) -> dict[str, Any]:
@@ -55,7 +59,9 @@ def _database_status(db: Session) -> dict[str, Any]:
 
 
 def _mlflow_status() -> dict[str, Any]:
-    uri = settings.MLFLOW_TRACKING_URI
+    from ml.training.mlflow_logger import get_default_uri
+
+    uri = get_default_uri()
     if uri.startswith(("http://", "https://")):
         try:
             import httpx
@@ -65,11 +71,20 @@ def _mlflow_status() -> dict[str, Any]:
         except Exception as exc:
             return {"ok": False, "uri": uri, "error": str(exc)}
 
-    if uri.startswith("file:"):
-        path = Path(uri.removeprefix("file:"))
-    else:
-        path = Path(uri)
+    path = _uri_to_path(uri)
     return {"ok": path.exists(), "uri": uri, "path": str(path)}
+
+
+def _uri_to_path(uri: str) -> Path:
+    if uri.startswith("file:"):
+        return Path(uri.removeprefix("file:"))
+    if uri.startswith("sqlite:///"):
+        parsed = urlparse(uri)
+        path_str = parsed.path
+        if os.name == "nt" and len(path_str) >= 3 and path_str[0] == "/" and path_str[2] == ":":
+            path_str = path_str[1:]
+        return Path(path_str)
+    return Path(uri)
 
 
 def _pipeline_run_times(db: Session, scheduler_state: dict[str, Any]) -> dict[str, Any]:

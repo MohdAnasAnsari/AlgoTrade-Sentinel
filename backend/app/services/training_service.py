@@ -4,14 +4,11 @@ Training service — wraps MLflow client queries and background job management.
 from __future__ import annotations
 
 import logging
-import os
-import socket
 import sys
 import threading
 import uuid
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -24,29 +21,15 @@ if _PROJECT_ROOT not in sys.path:
 _jobs: dict[str, dict[str, Any]] = {}
 
 # ── MLflow paths (must agree with ml/training/mlflow_logger.py) ───────────────
-_ML_DIR    = Path(__file__).parents[3] / "ml"
-_MLFLOW_DB = _ML_DIR / "artifacts" / "mlflow.db"
-
 EXPERIMENT_NAME       = "algotrade-sentinel-signals"
 REGISTERED_MODEL_NAME = "signal-predictor"
 
 
 def _mlflow_uri() -> str:
     """Return the same tracking URI that the trainer uses."""
-    env_uri = os.environ.get("MLFLOW_TRACKING_URI", "")
-    if env_uri:
-        parsed = urlparse(env_uri)
-        if parsed.scheme in {"http", "https"}:
-            try:
-                port = parsed.port or (443 if parsed.scheme == "https" else 80)
-                with socket.create_connection((parsed.hostname, port), timeout=3.0):
-                    return env_uri
-            except OSError:
-                pass
-        else:
-            return env_uri
-    path = str(_MLFLOW_DB).replace("\\", "/")
-    return f"sqlite:///{path}"
+    from ml.training.mlflow_logger import get_default_uri
+
+    return get_default_uri()
 
 
 def _get_mlflow_client():
@@ -233,7 +216,7 @@ def get_registered_models() -> list[dict]:
             latest = rm.latest_versions[0] if rm.latest_versions else None
             result.append({
                 "name":              rm.name,
-                "latest_version":    latest.version if latest else None,
+                "latest_version":    _string_or_none(latest.version if latest else None),
                 "stage":             latest.current_stage if latest else None,
                 "best_model_name":   rm.tags.get("best_model"),
                 "description":       rm.description,
@@ -253,7 +236,7 @@ def get_model_versions(model_name: str) -> list[dict]:
         result = []
         for v in versions:
             result.append({
-                "version":       v.version,
+                "version":       _string_or_none(v.version) or "",
                 "stage":         v.current_stage,
                 "run_id":        v.run_id,
                 "creation_time": _ms_to_iso(v.creation_timestamp),
@@ -276,6 +259,13 @@ def _int(val) -> Optional[int]:
         return int(val) if val is not None else None
     except (TypeError, ValueError):
         return None
+
+
+def _string_or_none(val) -> Optional[str]:
+    if val is None:
+        return None
+    text = str(val).strip()
+    return text or None
 
 
 def _extract_cm(metrics: dict, label_names: list[str]) -> Optional[dict]:

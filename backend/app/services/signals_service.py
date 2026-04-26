@@ -172,23 +172,22 @@ def _signal_to_dict(row) -> dict:
 
 def get_latest_signals(db, signal_filter: Optional[str] = None) -> list[dict]:
     """Return the most recent signal per ticker, optionally filtered by BUY/SELL/HOLD."""
-    from sqlalchemy import func
     from app.models.signals import Signal
 
-    subq = (
-        db.query(Signal.ticker, func.max(Signal.signal_date).label("max_date"))
-        .group_by(Signal.ticker)
-        .subquery()
+    rows = (
+        db.query(Signal)
+        .order_by(Signal.ticker.asc(), Signal.signal_date.desc(), Signal.created_at.desc())
+        .all()
     )
-    query = db.query(Signal).join(
-        subq,
-        (Signal.ticker == subq.c.ticker) & (Signal.signal_date == subq.c.max_date),
-    )
+    latest_by_ticker: dict[str, Any] = {}
+    for row in rows:
+        latest_by_ticker.setdefault(row.ticker, row)
+    selected_rows = list(latest_by_ticker.values())
     if signal_filter:
-        query = query.filter(Signal.signal == signal_filter.upper())
-    rows = query.order_by(Signal.ticker).all()
-    if rows:
-        return [_signal_to_dict(r) for r in rows]
+        selected_rows = [row for row in selected_rows if row.signal == signal_filter.upper()]
+    selected_rows.sort(key=lambda row: row.ticker)
+    if selected_rows:
+        return [_signal_to_dict(r) for r in selected_rows]
 
     return _fallback_latest_label_signals(db, signal_filter=signal_filter)
 
@@ -256,7 +255,7 @@ def get_ticker_latest_signal(ticker: str, db) -> Optional[dict]:
     row = (
         db.query(Signal)
         .filter(Signal.ticker == ticker)
-        .order_by(Signal.signal_date.desc())
+        .order_by(Signal.signal_date.desc(), Signal.created_at.desc())
         .first()
     )
     if not row:

@@ -12,6 +12,7 @@ const BREADCRUMB_MAP: Record<string, string[]> = {
   "/training-lab": ["ML", "Training Lab"],
   "/model-registry": ["ML", "Model Registry"],
   "/backtesting": ["Trading", "Backtesting Center"],
+  "/backtesting-center": ["Trading", "Backtesting Center"],
   "/signal-center": ["Trading", "Signal Center"],
   "/paper-portfolio": ["Trading", "Paper Portfolio"],
   "/monitoring": ["Ops", "Monitoring Center"],

@@ -51,7 +51,7 @@ def get_dashboard_overview(db: Session) -> dict[str, Any]:
         champion_model_name = REGISTERED_MODEL_NAME
         champion = get_champion(REGISTERED_MODEL_NAME)
         if champion:
-            champion_version = champion.get("version")
+            champion_version = _string_or_none(champion.get("version"))
             champion_f1 = champion.get("f1_macro")
     except Exception:
         champion = None
@@ -182,3 +182,10 @@ def _iso(value: Any) -> str | None:
     if hasattr(value, "isoformat"):
         return value.isoformat()
     return str(value)
+
+
+def _string_or_none(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None

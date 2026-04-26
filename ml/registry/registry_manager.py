@@ -41,7 +41,7 @@ def list_registered_models() -> list[dict]:
         latest = rm.latest_versions[0] if rm.latest_versions else None
         models.append({
             "name":              rm.name,
-            "latest_version":    latest.version if latest else None,
+            "latest_version":    _stringify_version(latest.version if latest else None),
             "stage":             latest.current_stage if latest else None,
             "description":       rm.description,
             "creation_time":     rm.creation_timestamp,
@@ -59,7 +59,7 @@ def list_model_versions(model_name: str = REGISTERED_MODEL_NAME) -> list[dict]:
     for mv in sorted(versions, key=lambda v: int(v.version), reverse=True):
         run_metrics = _get_run_metrics(mv.run_id) if mv.run_id else {}
         result.append({
-            "version":       mv.version,
+            "version":       _stringify_version(mv.version) or "",
             "stage":         mv.current_stage,
             "run_id":        mv.run_id,
             "creation_time": mv.creation_timestamp,
@@ -82,9 +82,10 @@ def get_champion(model_name: str = REGISTERED_MODEL_NAME) -> Optional[dict]:
     mv = versions[0]
     run_metrics = _get_run_metrics(mv.run_id) if mv.run_id else {}
     return {
-        "version":    mv.version,
+        "version":    _stringify_version(mv.version) or "",
         "stage":      mv.current_stage,
         "run_id":     mv.run_id,
+        "status":     getattr(mv, "status", None),
         "f1_macro":   run_metrics.get("f1_macro"),
         "accuracy":   run_metrics.get("accuracy"),
         "roc_auc":    run_metrics.get("roc_auc"),
@@ -102,9 +103,10 @@ def get_challengers(model_name: str = REGISTERED_MODEL_NAME) -> list[dict]:
     for mv in versions:
         run_metrics = _get_run_metrics(mv.run_id) if mv.run_id else {}
         result.append({
-            "version":    mv.version,
+            "version":    _stringify_version(mv.version) or "",
             "stage":      mv.current_stage,
             "run_id":     mv.run_id,
+            "status":     getattr(mv, "status", None),
             "f1_macro":   run_metrics.get("f1_macro"),
             "accuracy":   run_metrics.get("accuracy"),
             "roc_auc":    run_metrics.get("roc_auc"),
@@ -141,6 +143,7 @@ def promote_to_production(
     Returns dict with old_champion and new_champion info.
     """
     client = _client()
+    version = _stringify_version(version) or ""
 
     old_champion = get_champion(model_name)
 
@@ -173,6 +176,7 @@ def archive_version(
 ) -> dict:
     """Transition a version to Archived stage."""
     client = _client()
+    version = _stringify_version(version) or ""
     client.transition_model_version_stage(
         name=model_name,
         version=version,
@@ -241,3 +245,10 @@ def _get_run_param(run_id: str, param: str) -> Optional[str]:
         return run.data.params.get(param)
     except Exception:
         return None
+
+
+def _stringify_version(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None

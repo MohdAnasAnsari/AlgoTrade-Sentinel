@@ -73,24 +73,24 @@ class StartInferenceResponse(BaseModel):
 class ModelVersionOut(BaseModel):
     version:       str
     stage:         str
-    run_id:        Optional[str]
-    f1_macro:      Optional[float]
-    accuracy:      Optional[float]
-    roc_auc:       Optional[float]
-    model_name:    Optional[str]
-    creation_time: Optional[int]
-    description:   Optional[str]
-    status:        Optional[str]
+    run_id:        Optional[str] = None
+    f1_macro:      Optional[float] = None
+    accuracy:      Optional[float] = None
+    roc_auc:       Optional[float] = None
+    model_name:    Optional[str] = None
+    creation_time: Optional[int] = None
+    description:   Optional[str] = None
+    status:        Optional[str] = None
 
 
 class RegisteredModelOut(BaseModel):
     name:              str
-    latest_version:    Optional[str]
-    stage:             Optional[str]
-    description:       Optional[str]
-    creation_time:     Optional[int]
-    last_updated_time: Optional[int]
-    tags:              Optional[dict]
+    latest_version:    Optional[str] = None
+    stage:             Optional[str] = None
+    description:       Optional[str] = None
+    creation_time:     Optional[int] = None
+    last_updated_time: Optional[int] = None
+    tags:              Optional[dict] = None
 
 
 class PromoteRequest(BaseModel):

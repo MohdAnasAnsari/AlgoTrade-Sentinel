@@ -10,6 +10,7 @@ import pickle
 import platform
 import socket
 import warnings
+from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Optional
@@ -30,6 +31,7 @@ EXPERIMENT_NAME        = "algotrade-sentinel-signals"
 REGISTERED_MODEL_NAME  = "signal-predictor"
 
 
+@lru_cache(maxsize=1)
 def get_default_uri() -> str:
     uri = os.getenv("MLFLOW_TRACKING_URI")
     if uri and _uri_reachable(uri):

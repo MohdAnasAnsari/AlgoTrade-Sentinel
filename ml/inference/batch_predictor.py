@@ -41,39 +41,81 @@ def load_champion_artifacts(model_name: str = REGISTERED_MODEL_NAME) -> tuple:
     Returns (model, scaler, feature_names, run_id, model_version).
     Raises RuntimeError if no Production version found.
     """
-    import mlflow
-    from mlflow.tracking import MlflowClient
+    try:
+        import mlflow
+        from mlflow.tracking import MlflowClient
 
-    mlflow.set_tracking_uri(get_default_uri())
-    client = MlflowClient()
+        mlflow.set_tracking_uri(get_default_uri())
+        client = MlflowClient()
 
-    versions = client.get_latest_versions(model_name, stages=["Production"])
-    if not versions:
-        # Fall back to Staging if no Production model yet
-        versions = client.get_latest_versions(model_name, stages=["Staging"])
+        versions = client.get_latest_versions(model_name, stages=["Production"])
         if not versions:
-            raise RuntimeError(f"No Production or Staging model found for '{model_name}'")
-        logger.warning("No Production model — falling back to Staging v%s", versions[0].version)
+            versions = client.get_latest_versions(model_name, stages=["Staging"])
+            if not versions:
+                raise RuntimeError(f"No Production or Staging model found for '{model_name}'")
+            logger.warning("No Production model available, using Staging v%s", versions[0].version)
 
-    mv     = versions[0]
-    run_id = mv.run_id
-    version = mv.version
+        mv = versions[0]
+        return _load_artifact_bundle(
+            run_dir=_ARTIFACTS_DIR / mv.run_id,
+            run_id=mv.run_id,
+            version=str(mv.version),
+            source="mlflow-registry",
+        )
+    except Exception as exc:
+        logger.warning(
+            "Could not load champion model from MLflow for %s: %s. Falling back to local artifacts.",
+            model_name,
+            exc,
+        )
+        return _load_latest_local_artifacts()
 
-    run_dir = _ARTIFACTS_DIR / run_id
-    model_pkl  = run_dir / "model.pkl"
+
+def _load_latest_local_artifacts() -> tuple:
+    candidates = sorted(
+        [
+            path for path in _ARTIFACTS_DIR.iterdir()
+            if path.is_dir() and (path / "model.pkl").exists() and (path / "scaler.pkl").exists()
+        ],
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    if not candidates:
+        raise RuntimeError(f"No local model artifacts found in {_ARTIFACTS_DIR}")
+
+    run_dir = candidates[0]
+    return _load_artifact_bundle(
+        run_dir=run_dir,
+        run_id=run_dir.name,
+        version="local",
+        source="local-artifacts",
+    )
+
+
+def _load_artifact_bundle(run_dir: Path, run_id: str, version: str, source: str) -> tuple:
+    model_pkl = run_dir / "model.pkl"
     scaler_pkl = run_dir / "scaler.pkl"
-    feat_json  = run_dir / "features.json"
+    feat_json = run_dir / "features.json"
 
-    if not model_pkl.exists():
+    if not model_pkl.exists() or not scaler_pkl.exists():
         raise RuntimeError(f"Model artifacts not found at {run_dir}")
 
     with open(model_pkl, "rb") as f:
         model = pickle.load(f)
     with open(scaler_pkl, "rb") as f:
         scaler = pickle.load(f)
-    feature_names = json.loads(feat_json.read_text()) if feat_json.exists() else ALL_FEATURES
 
-    logger.info("Loaded champion model from run %s v%s", run_id, version)
+    # Some persisted sklearn models were trained with n_jobs=-1, which can
+    # fail inside constrained Windows environments when prediction tries to
+    # spin up worker pools.
+    if hasattr(model, "n_jobs"):
+        try:
+            model.n_jobs = 1
+        except Exception:
+            logger.debug("Could not force n_jobs=1 for %s", type(model).__name__)
+
+    feature_names = json.loads(feat_json.read_text()) if feat_json.exists() else ALL_FEATURES
+    logger.info("Loaded model artifacts from %s run %s v%s", source, run_id, version)
     return model, scaler, feature_names, run_id, version
 
 
@@ -234,6 +276,10 @@ def run_batch_inference(
         except Exception as exc:
             logger.error("Inference failed for %s: %s", ticker, exc)
             skipped.append(ticker)
+
+    for signal in all_signals:
+        signal["model_run_id"] = run_id
+        signal["model_version"] = version
 
     return {
         "signals":           all_signals,
