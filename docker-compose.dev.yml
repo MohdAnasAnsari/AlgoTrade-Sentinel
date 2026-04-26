@@ -32,11 +32,14 @@ services:
       DEBUG: "true"
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://127.0.0.1:3000"]}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://algotrade:algotrade@db:5432/algotrade}
+      DATABASE_URL: postgresql://algotrade:algotrade@db:5432/algotrade
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
-      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PREFECT_API_URL: http://prefect:4200/api
       ENABLE_APSCHEDULER: "false"
+      GIT_PYTHON_REFRESH: quiet
+      MPLCONFIGDIR: /tmp/matplotlib
+      PREFECT_HOME: /tmp/.prefect
     ports:
       - "8000:8000"
     volumes:
@@ -45,12 +48,11 @@ services:
       - ./mlops:/app/mlops
       - ./config:/app/config
       - ./scripts:/app/scripts
-      - ml_artifacts:/app/ml/artifacts
     depends_on:
       db:
         condition: service_healthy
       mlflow:
-        condition: service_started
+        condition: service_healthy
       prefect:
         condition: service_started
 
@@ -74,22 +76,19 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.19.0
     command:
       [
-        "mlflow",
-        "server",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "5000",
-        "--backend-store-uri",
-        "sqlite:////mlflow/mlflow.db",
-        "--default-artifact-root",
-        "/mlflow/artifacts",
-        "--serve-artifacts",
+        "/bin/sh", "-c",
+        "mkdir -p /mlflow/artifacts && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --serve-artifacts --artifacts-destination /mlflow/artifacts"
       ]
     ports:
       - "5000:5000"
     volumes:
       - mlflow_artifacts:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000').status < 500 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   prefect:
     image: prefecthq/prefect:2.19.9-python3.11
@@ -103,4 +102,3 @@ services:
 volumes:
   postgres_data:
   mlflow_artifacts:
-  ml_artifacts:

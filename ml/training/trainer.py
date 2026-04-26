@@ -86,7 +86,7 @@ def get_available_models(model_list: Optional[list[str]] = None) -> dict:
     """Return ordered dict of {name: model} for available + requested models."""
     models: dict = {
         "LogisticRegression": LogisticRegression(
-            max_iter=1000, random_state=42, multi_class="multinomial", solver="lbfgs"
+            max_iter=1000, random_state=42, solver="lbfgs"
         ),
         "DecisionTreeClassifier": DecisionTreeClassifier(
             max_depth=8, random_state=42

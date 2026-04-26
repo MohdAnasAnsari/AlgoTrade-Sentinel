@@ -22,7 +22,7 @@ def upgrade() -> None:
         sa.Column("report_type", sa.String(length=50), nullable=False),
         sa.Column("drift_share", sa.Float(), nullable=True),
         sa.Column("drifted_features_json", sa.Text(), nullable=True),
-        sa.Column("prediction_drift_detected", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("prediction_drift_detected", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("model_perf_f1", sa.Float(), nullable=True),
         sa.Column("alert_level", sa.String(length=20), nullable=False, server_default=sa.text("'INFO'")),
         sa.Column("evidently_report_html", sa.String(length=500), nullable=True),
@@ -54,7 +54,7 @@ def upgrade() -> None:
         sa.Column("old_model_version", sa.String(length=50), nullable=True),
         sa.Column("new_model_version", sa.String(length=50), nullable=True),
         sa.Column("new_f1", sa.Float(), nullable=True),
-        sa.Column("promoted", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("promoted", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column(
             "created_at",

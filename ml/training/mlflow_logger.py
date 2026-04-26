@@ -46,7 +46,7 @@ def _uri_reachable(uri: str) -> bool:
     if not parsed.hostname:
         return False
     try:
-        with socket.create_connection((parsed.hostname, port), timeout=0.5):
+        with socket.create_connection((parsed.hostname, port), timeout=3.0):
             return True
     except OSError:
         logger.warning("MLflow URI %s is unreachable, falling back to local sqlite store", uri)
@@ -180,30 +180,39 @@ def log_training_run(
         run_dir = artifacts_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
 
-        # Model (pickle)
+        # Model (pickle) — save locally always; upload to MLflow artifact store best-effort
         model_pkl = run_dir / "model.pkl"
         with open(model_pkl, "wb") as f:
             pickle.dump(model, f)
-        mlflow.log_artifact(str(model_pkl), "model")
+        try:
+            mlflow.log_artifact(str(model_pkl), "model")
+        except Exception as e:
+            logger.warning("log_artifact model.pkl failed (non-fatal): %s", e)
 
         # Scaler
         scaler_pkl = run_dir / "scaler.pkl"
         with open(scaler_pkl, "wb") as f:
             pickle.dump(scaler, f)
-        mlflow.log_artifact(str(scaler_pkl), "scaler")
+        try:
+            mlflow.log_artifact(str(scaler_pkl), "scaler")
+        except Exception as e:
+            logger.warning("log_artifact scaler.pkl failed (non-fatal): %s", e)
 
         # Feature list
         feat_json = run_dir / "features.json"
         feat_json.write_text(json.dumps(feature_names, indent=2))
-        mlflow.log_artifact(str(feat_json), "features")
+        try:
+            mlflow.log_artifact(str(feat_json), "features")
+        except Exception as e:
+            logger.warning("log_artifact features.json failed (non-fatal): %s", e)
 
         # Confusion matrix JSON + plot
         cm_json = run_dir / "confusion_matrix.json"
-        cm_json.write_text(json.dumps({
-            "matrix": cm.tolist(),
-            "labels": label_names,
-        }))
-        mlflow.log_artifact(str(cm_json), "confusion_matrix")
+        cm_json.write_text(json.dumps({"matrix": cm.tolist(), "labels": label_names}))
+        try:
+            mlflow.log_artifact(str(cm_json), "confusion_matrix")
+        except Exception as e:
+            logger.warning("log_artifact confusion_matrix.json failed (non-fatal): %s", e)
 
         try:
             cm_png = run_dir / "confusion_matrix.png"
@@ -215,13 +224,19 @@ def log_training_run(
         # Classification report JSON
         report_json = run_dir / "classification_report.json"
         report_json.write_text(json.dumps(report, indent=2))
-        mlflow.log_artifact(str(report_json), "reports")
+        try:
+            mlflow.log_artifact(str(report_json), "reports")
+        except Exception as e:
+            logger.warning("log_artifact classification_report.json failed (non-fatal): %s", e)
 
         # Feature importances
         if feature_importances:
             fi_json = run_dir / "feature_importances.json"
             fi_json.write_text(json.dumps(feature_importances, indent=2))
-            mlflow.log_artifact(str(fi_json), "importances")
+            try:
+                mlflow.log_artifact(str(fi_json), "importances")
+            except Exception as e:
+                logger.warning("log_artifact feature_importances.json failed (non-fatal): %s", e)
 
             try:
                 fi_png = run_dir / "feature_importances.png"
@@ -234,7 +249,7 @@ def log_training_run(
         try:
             mlflow.sklearn.log_model(model, "sklearn_model")
         except Exception as e:
-            logger.warning("sklearn log_model failed: %s", e)
+            logger.warning("sklearn log_model failed (non-fatal): %s", e)
 
         logger.info("MLflow run %s logged: F1=%.4f", run_id, metrics.get("f1_macro", 0))
         return run_id

@@ -96,7 +96,7 @@ def upgrade() -> None:
         sa.Column("ticker", sa.String(length=20), nullable=True),
         sa.Column("message", sa.Text(), nullable=False),
         sa.Column("severity", sa.String(length=20), nullable=False, server_default=sa.text("'INFO'")),
-        sa.Column("is_read", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("is_read", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column(
             "created_at",
             sa.DateTime(),
@@ -123,7 +123,7 @@ def upgrade() -> None:
             server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=False,
         ),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("ticker"),
     )

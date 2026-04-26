@@ -4,11 +4,14 @@ Training service — wraps MLflow client queries and background job management.
 from __future__ import annotations
 
 import logging
+import os
+import socket
 import sys
 import threading
 import uuid
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,19 @@ REGISTERED_MODEL_NAME = "signal-predictor"
 
 
 def _mlflow_uri() -> str:
+    """Return the same tracking URI that the trainer uses."""
+    env_uri = os.environ.get("MLFLOW_TRACKING_URI", "")
+    if env_uri:
+        parsed = urlparse(env_uri)
+        if parsed.scheme in {"http", "https"}:
+            try:
+                port = parsed.port or (443 if parsed.scheme == "https" else 80)
+                with socket.create_connection((parsed.hostname, port), timeout=3.0):
+                    return env_uri
+            except OSError:
+                pass
+        else:
+            return env_uri
     path = str(_MLFLOW_DB).replace("\\", "/")
     return f"sqlite:///{path}"
 
@@ -36,8 +52,9 @@ def _mlflow_uri() -> str:
 def _get_mlflow_client():
     import mlflow
     from mlflow.tracking import MlflowClient
-    mlflow.set_tracking_uri(_mlflow_uri())
-    return MlflowClient(_mlflow_uri())
+    uri = _mlflow_uri()
+    mlflow.set_tracking_uri(uri)
+    return MlflowClient(uri)
 
 
 def _ms_to_iso(ts_ms: Optional[int]) -> Optional[str]:

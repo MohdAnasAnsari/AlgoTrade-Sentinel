@@ -27,7 +27,7 @@ services:
       DEBUG: ${DEBUG:-false}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://algotrade:algotrade@db:5432/algotrade}
+      DATABASE_URL: postgresql://algotrade:algotrade@db:5432/algotrade
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
       DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-20}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
@@ -39,9 +39,12 @@ services:
       FEATURE_CRON: ${FEATURE_CRON:-30 22 * * 1-5}
       INFERENCE_CRON: ${INFERENCE_CRON:-45 22 * * 1-5}
       MONITORING_CRON: ${MONITORING_CRON:-0 23 * * 1-5}
-      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI:-http://mlflow:5000}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
       MLFLOW_STATUS_TIMEOUT_SECONDS: ${MLFLOW_STATUS_TIMEOUT_SECONDS:-3}
-      PREFECT_API_URL: ${PREFECT_API_URL:-http://prefect:4200/api}
+      PREFECT_API_URL: http://prefect:4200/api
+      GIT_PYTHON_REFRESH: quiet
+      MPLCONFIGDIR: /tmp/matplotlib
+      PREFECT_HOME: /tmp/.prefect
     command: ["/bin/sh", "-c", "/app/scripts/init_db.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     ports:
       - "8000:8000"
@@ -83,17 +86,8 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.19.0
     command:
       [
-        "mlflow",
-        "server",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "5000",
-        "--backend-store-uri",
-        "sqlite:////mlflow/mlflow.db",
-        "--default-artifact-root",
-        "/mlflow/artifacts",
-        "--serve-artifacts",
+        "/bin/sh", "-c",
+        "mkdir -p /mlflow/artifacts && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --serve-artifacts --artifacts-destination /mlflow/artifacts"
       ]
     ports:
       - "5000:5000"

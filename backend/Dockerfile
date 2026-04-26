@@ -22,6 +22,9 @@ COPY config /app/config
 COPY scripts /app/scripts
 
 RUN chmod +x /app/scripts/*.sh \
+    && mkdir -p /app/ml/artifacts/models \
+                /app/ml/artifacts/datasets \
+                /app/ml/artifacts/monitoring \
     && addgroup --system appgroup \
     && adduser --system --ingroup appgroup appuser \
     && chown -R appuser:appgroup /app

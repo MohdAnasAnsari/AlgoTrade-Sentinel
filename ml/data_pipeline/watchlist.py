@@ -67,7 +67,7 @@ def _load_watchlist_from_db() -> list[WatchlistItem]:
                 text(
                     """
                     SELECT ticker, company_name, sector
-                    FROM watchlist
+                    FROM watchlists
                     WHERE is_active = true
                     ORDER BY ticker
                     """
